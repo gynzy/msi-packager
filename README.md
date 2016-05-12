@@ -1,3 +1,7 @@
+Fixed Issues I had with the original package. Warning: If this gets merged back upstream this
+package will be removed.
+
+
 msi-packager
 ===
 
