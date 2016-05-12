@@ -1,7 +1,8 @@
-var fs = require('fs')
-var map = require('async-each')
-var join = require('path').join
-var el = require('./lib/hyperxml')
+var fs = require('fs');
+var map = require('async-each');
+var join = require('path').join;
+var basename = require('path').basename;
+var el = require('./lib/hyperxml');
 
 module.exports = generateXml
 
@@ -87,15 +88,50 @@ function installerFor (components, options) {
             Id: 'INSTALLDIR',
             Name: options.name,
           }, components)
+        ]),
+        el('Directory', {Id:'ProgramMenuFolder'}, [
+            el('Directory', {Id: 'ApplicationProgramsFolder', Name: options.name})
         ])
+      ]),
+
+      el('DirectoryRef', {Id: 'ApplicationProgramsFolder'}, [
+          el('Component', {Id: 'ApplicationShortcut', Guid : options.upgradeCode}, [
+              el('Shortcut', {
+                Id : 'desktopShortcut',
+                Advertise: 'yes',
+                Directory: "DesktopFolder",
+                Name : options.name,
+                Description : options.description || '',
+                Target : '[#' + basename(options.executable) + ']',
+                WorkingDirectory : 'INSTALLDIR'
+              }),
+
+              el('Shortcut', {
+                Id : 'ApplicationStartMenuShortcut',
+                Name : options.name,
+                Description : options.description || '',
+                Directory : 'ApplicationProgramsFolder',
+                Target : '[#' + basename(options.executable) + ']',
+                WorkingDirectory : 'INSTALLDIR'
+              }),
+              el('RemoveFolder', {Id: 'ApplicationProgramsFolder', On: 'uninstall'}),
+              el('RegistryValue', {Root : 'HKCU', Key : "Software\\Microsoft\\" + options.name, Name : 'installed', Type : 'integer', Value : '1', KeyPath: 'yes'}),
+          ])
       ]),
 
       el('Feature', {
         Id: 'App',
         Level: '1'
-      }, options.componentIds.map(function(id) {
-        return el('ComponentRef', { Id: id })
-      }))
+      },
+          (function () {
+
+            var o = options.componentIds.map(function(id) {
+              return el('ComponentRef', { Id: id })
+            });
+            o.push(el('ComponentRef', { Id: 'ApplicationShortcut'}));
+            return o;
+          })()
+      )
 
     ])
   ])
