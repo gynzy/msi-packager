@@ -22,8 +22,15 @@ module.exports = function(options, cb) {
     if (options.arch) {
       args.push('--arch', options.arch)
     }
+    const isWin = process.platform === "win32";
+    if(isWin){
+        execFile('candle.exe', args, function(){
+            execFile('light.exe', args, cb)
+        })
+    }else{
+        execFile('wixl', args, cb)
+    }
 
-    execFile('wixl', args, cb)
   })
 }
 
